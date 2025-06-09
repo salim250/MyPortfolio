@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CI/CD for .NET with GitHub Actions and Self-Hosted Runners</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/themify-icons@0.1.2/css/themify-icons.css" />
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; padding: 2rem; max-width: 900px; margin: auto; color: #333; line-height: 1.7; }
+    h1, h2, h3 { color: #222; }
+    .meta { color: #777; font-size: 0.9rem; margin-bottom: 1rem; }
+    code, pre { background: #f9f9f9; padding: 1rem; border-radius: 6px; display: block; overflow-x: auto; }
+    a.read-back { display: inline-block; margin-top: 2rem; color: #d33; text-decoration: none; }
+    img { max-width: 100%; margin: 1rem 0; border-radius: 8px; }
+    ul { padding-left: 1.2rem; }
+  </style>
+</head>
+<body>
+
+<h1>CI/CD for .NET Projects Using GitHub Actions and Self-Hosted Runners</h1>
+<p class="meta">Posted on June 9, 2025 by Brahim Salim</p>
+
+<p>
+  Automating the build, test, and deployment workflow for .NET applications is essential for any modern development team. In this article, I’ll share a generic approach to setting up a CI/CD pipeline using <strong>GitHub Actions</strong> along with <strong>self-hosted Windows runners</strong>, especially useful when working with on-premise resources like IIS or custom infrastructure.
+</p>
+
+<h2>💡 Why Use GitHub Actions?</h2>
+<p>
+  GitHub Actions provides an integrated way to automate software workflows — directly from your GitHub repository. For .NET developers, it enables continuous integration and deployment (CI/CD) with:
+</p>
+<ul>
+  <li>Cross-platform runners (Linux, macOS, Windows)</li>
+  <li>Support for .NET SDK versions</li>
+  <li>Custom deployment logic using PowerShell or bash</li>
+  <li>Secure secrets management</li>
+</ul>
+
+<h2>🏗️ When to Use a Self-Hosted Runner</h2>
+<p>
+  While GitHub-hosted runners work for most cases, there are scenarios where a <strong>self-hosted Windows runner</strong> is ideal:
+</p>
+<ul>
+  <li>Deploying to local IIS or intranet servers</li>
+  <li>Using licensed software like Visual Studio Test tools</li>
+  <li>Accessing internal resources or shared drives</li>
+</ul>
+
+<h2>🧱 Typical Pipeline Tasks</h2>
+<p>The pipeline typically performs the following:</p>
+<ul>
+  <li>Check out source code</li>
+  <li>Restore NuGet packages</li>
+  <li>Build the solution with MSBuild</li>
+  <li>Run unit or integration tests using <code>vstest.console.exe</code></li>
+  <li>Optionally, deploy the output (e.g. to IIS)</li>
+</ul>
+
+<h2>⚙️ Sample GitHub Actions Workflow</h2>
+<p>Here’s a simplified version of a workflow using a Windows self-hosted runner:</p>
+
+<pre><code>name: .NET CI/CD
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-test:
+    runs-on: self-hosted  # Assumes a Windows runner
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v2
+
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1
+
+    - uses: nuget/setup-nuget@v1
+
+    - name: Restore Dependencies
+      run: nuget restore MySolution.sln
+
+    - name: Build Solution
+      run: msbuild.exe MyProject/MyProject.csproj /p:Configuration=Release
+
+    - name: Run Tests
+      run: |
+        & "C:\Program Files (x86)\Microsoft Visual Studio\2019\TestAgent\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" MyTests\bin\Release\MyTests.dll
+</code></pre>
+
+<h2>🔐 Secrets and Security</h2>
+<p>
+  GitHub Secrets can be used to securely pass tokens, credentials, or configuration values. For example:
+</p>
+<pre><code>env:
+  DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}</code></pre>
+
+<h2>🛠️ Optional PowerShell for Deployment</h2>
+<p>
+  A custom PowerShell script can be used in the pipeline to:
+</p>
+<ul>
+  <li>Stop IIS</li>
+  <li>Back up the current deployment</li>
+  <li>Copy new build artifacts</li>
+  <li>Restart services</li>
+</ul>
+
+<pre><code>iisreset /stop
+# Backup logic here
+Copy-Item -Path ".\output" -Destination "C:\inetpub\wwwroot\myapp" -Recurse -Force
+iisreset /start
+</code></pre>
+
+<h2>✅ Conclusion</h2>
+<p>
+  GitHub Actions combined with self-hosted Windows runners is a powerful option for .NET teams working in hybrid environments. Whether you're building cloud apps or managing on-premise infrastructure, this approach gives you full control, flexibility, and consistency.
+</p>
+<p>
+  This setup is easy to evolve — you can integrate notifications, parallel jobs, deployment gates, or even Docker containers as needed.
+</p>
+
+<a href="index.html#blog" class="read-back"><i class="ti-angle-left"></i> Back to Blog</a>
+
+</body>
+</html>
