@@ -17,47 +17,91 @@
 </head>
 <body>
 
-<h1>CI/CD for .NET Projects Using GitHub Actions and Self-Hosted Runners</h1>
+<h1>🚀 Setting Up CI/CD for .NET Web Applications Using GitHub Actions and Self-Hosted Windows Runners</h1>
 <p class="meta">Posted on June 9, 2025 by Brahim Salim</p>
 
 <p>
-  Automating the build, test, and deployment workflow for .NET applications is essential for any modern development team. In this article, I’ll share a generic approach to setting up a CI/CD pipeline using <strong>GitHub Actions</strong> along with <strong>self-hosted Windows runners</strong>, especially useful when working with on-premise resources like IIS or custom infrastructure.
+  Modern development workflows require automation, consistency, and flexibility — especially when deploying .NET web applications to on-premises infrastructure. This guide outlines a step-by-step approach to building a CI/CD pipeline using GitHub Actions with a self-hosted Windows runner, perfect for teams deploying to IIS or other internal environments.
 </p>
 
-<h2>💡 Why Use GitHub Actions?</h2>
+<h2>🧩 Overview</h2>
+<p>This guide covers:</p>
+<ul>
+  <li>Installing the necessary environment using Chocolatey</li>
+  <li>Setting up a self-hosted GitHub Actions runner</li>
+  <li>Installing build tools</li>
+  <li>Deploying a web app to IIS via a GitHub Actions pipeline</li>
+</ul>
+
+<h2>📦 Step 1: Install Chocolatey on the Server</h2>
+<p>Chocolatey simplifies package management on Windows.</p>
+<ol>
+  <li>Connect to the server where the application will be hosted (It can be your local machine).</li>
+  <li>Open PowerShell as Administrator.</li>
+  <li>Run the following command to install Chocolatey:</li>
+</ol>
+<pre><code>Set-ExecutionPolicy Bypass -Scope Process -Force;
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;
+iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))</code></pre>
+
+<p>Verify installation:</p>
+<pre><code>choco -v</code></pre>
+
+<h2>🛠️ Step 2: Install Required Build Tools</h2>
+<p>Use Chocolatey to install Visual Studio build tools ( here the version of the build tools depends on the version of .NET project ):</p>
+<pre><code>choco install visualstudio2017buildtools `
+--params "'--add Microsoft.VisualStudio.Workload.WebBuildTools --quiet --norestart'" -y</code></pre>
+<p>You can find the packages of chocolatey here : <a href="https://community.chocolatey.org/packages/">https://community.chocolatey.org/packages/</a></p>
+
+<h2>⚙️ Step 3: Set Up a GitHub Self-Hosted Runner</h2>
+<ol>
+  <li>Go to your GitHub repository.</li>
+  <li>Navigate to: <strong>Settings > Actions > Runners</strong></li>
+  <li>Click "New self-hosted runner" and follow the instructions:</li>
+  <ul>
+    <li>Select your operating system and architecture</li>
+    <li>Run the provided shell commands on your server</li>
+    <li>(Optional) Install as a Windows service for persistence</li>
+  </ul>
+</ol>
+<p><strong>💡 Tip:</strong> Use <code>C:\actions-runner</code> as the runner directory to simplify permission management.</p>
+<p>Once completed, you should see:</p>
+<pre><code>√ Connected to GitHub
+Listening for Jobs...</code></pre>
+
+<h2>🌐 Step 4: Configure IIS for Hosting the Application</h2>
+<ol>
+  <li>Open IIS Manager (inetmgr).</li>
+  <li>Add a new website with:</li>
+  <ul>
+    <li>Site Name: your-site-name</li>
+    <li>Physical Path: <code>C:\inetpub\wwwroot\YourApp</code></li>
+    <li>Port: 80 (or another of your choosing)</li>
+  </ul>
+  <li>Ensure the deployment user has write access to the website folder.</li>
+</ol>
+
+<h2>🤖 Sample GitHub Actions Workflow (Windows Runner)</h2>
 <p>
-  GitHub Actions provides an integrated way to automate software workflows — directly from your GitHub repository. For .NET developers, it enables continuous integration and deployment (CI/CD) with:
+  The following is a complete GitHub Actions workflow that covers the full build and deployment lifecycle including backing up the current IIS deployment to prevent downtime or data loss:
 </p>
+
+<h3>Pipeline Breakdown</h3>
 <ul>
-  <li>Cross-platform runners (Linux, macOS, Windows)</li>
-  <li>Support for .NET SDK versions</li>
-  <li>Custom deployment logic using PowerShell or bash</li>
-  <li>Secure secrets management</li>
+  <li><strong>Trigger</strong>: On every push to the <code>main</code> branch</li>
+  <li><strong>Environment</strong>: A self-hosted Windows runner configured with necessary tools</li>
+  <li><strong>Steps</strong>:
+    <ul>
+      <li>Checkout source code</li>
+      <li>Set up MSBuild and NuGet</li>
+      <li>Restore NuGet packages</li>
+      <li>Backup the existing IIS deployment (timestamped)</li>
+      <li>Stop IIS, move old deployment to backup, create a fresh deployment folder</li>
+      <li>Build and publish the new application</li>
+      <li>Restart IIS after deployment</li>
+    </ul>
+  </li>
 </ul>
-
-<h2>🏗️ When to Use a Self-Hosted Runner</h2>
-<p>
-  While GitHub-hosted runners work for most cases, there are scenarios where a <strong>self-hosted Windows runner</strong> is ideal:
-</p>
-<ul>
-  <li>Deploying to local IIS or intranet servers</li>
-  <li>Using licensed software like Visual Studio Test tools</li>
-  <li>Accessing internal resources or shared drives</li>
-</ul>
-
-<h2>🧱 Typical Pipeline Tasks</h2>
-<p>The pipeline typically performs the following:</p>
-<ul>
-  <li>Check out source code</li>
-  <li>Restore NuGet packages</li>
-  <li>Build the solution with MSBuild</li>
-  <li>Run unit or integration tests using <code>vstest.console.exe</code></li>
-  <li>Optionally, deploy the output (e.g. to IIS)</li>
-</ul>
-
-<h2>⚙️ Sample GitHub Actions Workflow</h2>
-<p>Here’s a simplified version of a workflow using a Windows self-hosted runner:</p>
-
 <pre><code>name: .NET CI/CD
 
 on:
@@ -65,10 +109,10 @@ on:
     branches: [ main ]
 
 jobs:
-  build-test:
-    runs-on: self-hosted  # Assumes a Windows runner
+  build-deploy:
+  runs-on: self-hosted // label of self hosted runner
 
-    steps:
+  steps:
     - name: Checkout Code
       uses: actions/checkout@v2
 
@@ -77,48 +121,66 @@ jobs:
 
     - uses: nuget/setup-nuget@v1
 
-    - name: Restore Dependencies
-      run: nuget restore MySolution.sln
+    - name: Restore NuGet Packages
+      run: nuget restore MyApp.sln
 
-    - name: Build Solution
-      run: msbuild.exe MyProject/MyProject.csproj /p:Configuration=Release
-
-    - name: Run Tests
+    - name: Backup Old Deployment
+      shell: powershell
       run: |
-        & "C:\Program Files (x86)\Microsoft Visual Studio\2019\TestAgent\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" MyTests\bin\Release\MyTests.dll
+        $DeployPath = "C:\inetpub\wwwroot\MyApp"
+        $BackupPath = "C:\inetpub\wwwroot\Backups"
+        $Timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+        $BackupFolder = "$BackupPath\MyApp_$Timestamp"
+
+        if (!(Test-Path $BackupPath)) {
+            New-Item -ItemType Directory -Path $BackupPath | Out-Null
+        }
+
+        Write-Host "Stopping IIS..."
+        iisreset /stop
+
+        if (Test-Path $DeployPath) {
+            Move-Item -Path $DeployPath -Destination $BackupFolder
+            Write-Host "Backup completed: $BackupFolder"
+        }
+
+        New-Item -ItemType Directory -Path $DeployPath | Out-Null
+
+        Write-Host "Starting IIS..."
+        iisreset /start
+
+    - name: Build and Publish Projects
+      run: |
+        msbuild.exe MyApp/MyApp.csproj /p:DeployOnBuild=true /p:PublishProfile=NameProfile /p:Configuration=Release
+
+    - name: Final IIS Restart
+      run: iisreset
 </code></pre>
 
-<h2>🔐 Secrets and Security</h2>
-<p>
-  GitHub Secrets can be used to securely pass tokens, credentials, or configuration values. For example:
-</p>
+<h2>🔐 Managing Secrets Securely</h2>
+<p>Use GitHub’s Secrets to manage sensitive variables like passwords or tokens:</p>
 <pre><code>env:
   DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}</code></pre>
 
-<h2>🛠️ Optional PowerShell for Deployment</h2>
-<p>
-  A custom PowerShell script can be used in the pipeline to:
-</p>
-<ul>
-  <li>Stop IIS</li>
-  <li>Back up the current deployment</li>
-  <li>Copy new build artifacts</li>
-  <li>Restart services</li>
-</ul>
-
-<pre><code>iisreset /stop
-# Backup logic here
-Copy-Item -Path ".\output" -Destination "C:\inetpub\wwwroot\myapp" -Recurse -Force
-iisreset /start
-</code></pre>
-
 <h2>✅ Conclusion</h2>
 <p>
-  GitHub Actions combined with self-hosted Windows runners is a powerful option for .NET teams working in hybrid environments. Whether you're building cloud apps or managing on-premise infrastructure, this approach gives you full control, flexibility, and consistency.
+  Using GitHub Actions with a self-hosted Windows runner provides a powerful, flexible pipeline for deploying .NET apps in environments where cloud runners don’t fit — like internal servers.
 </p>
-<p>
-  This setup is easy to evolve — you can integrate notifications, parallel jobs, deployment gates, or even Docker containers as needed.
-</p>
+
+<p>This setup gives you:</p>
+<ul>
+  <li>Full control of the environment</li>
+  <li>Seamless integration with GitHub</li>
+  <li>Automation across build, test, and deployment stages</li>
+</ul>
+
+<h3>👉 Want to go further?</h3>
+<ul>
+  <li>Slack/Teams notifications</li>
+  <li>Deployment gates</li>
+  <li>Parallel jobs or matrix builds</li>
+  <li>Docker-based deployment</li>
+</ul>
 
 <a href="index.html#blog" class="read-back"><i class="ti-angle-left"></i> Back to Blog</a>
 
