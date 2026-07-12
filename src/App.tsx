@@ -45,6 +45,7 @@ import {
   Project
 } from "./data/portfolioData";
 import PublishedBlogs from "./components/PublishedBlogs";
+import { initGA, logPageView } from "./components/Analytics";
 
 // Inline Custom SVGs for Social Icons to ensure absolute build stability
 const GithubIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
@@ -63,21 +64,31 @@ const LinkedinIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
 );
 
 export default function App() {
+
+  useEffect(() => {
+    initGA();
+  }, []);
+
+  useEffect(() => {
+    logPageView("Home");
+  }, []);
+
+
   // Theme state (default dark for sleek dev look, easily toggleable)
   const [darkMode, setDarkMode] = useState<boolean>(false);
-  
+
   // Project filter states
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  
+
   // Blog viewer states
   const [showFullBlog, setShowFullBlog] = useState<boolean>(false);
   const [copiedTextId, setCopiedTextId] = useState<string | null>(null);
-  
+
   // Mobile menu state
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
-  
+
   // Contact state
   const [contactForm, setContactForm] = useState({
     name: "",
@@ -96,7 +107,7 @@ export default function App() {
     reply: string;
   }>>([]);
   const [contactAlert, setContactAlert] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-  
+
   // Interactive CI/CD pipeline simulator states
   const [pipelineState, setPipelineState] = useState<{
     isRunning: boolean;
@@ -133,7 +144,7 @@ export default function App() {
   // Filtering Projects
   const filteredProjects = PROJECTS_DATA.filter((project) => {
     const matchesCategory = selectedCategory === "all" || project.category === selectedCategory;
-    const matchesSearch = 
+    const matchesSearch =
       project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       project.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
       project.technologies.some(tech => tech.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -148,14 +159,14 @@ export default function App() {
       setContactAlert({ type: 'error', text: "Please fill in all required fields." });
       return;
     }
-    
+
     setIsSending(true);
     setContactAlert(null);
-    
+
     // Simulate SMTP delivery with realistic console logs
     setTimeout(() => {
       const generatedReply = `Hello ${contactForm.name}! \n\nThank you for reaching out through my portfolio. I've received your inquiry regarding "${contactForm.subject || 'Opportunity'}".\n\nSince this is an interactive CV simulator, your message has been saved in my web state! I will also receive a direct notification at salim.brahim.dev@gmail.com and reply back to you at ${contactForm.email} shortly.\n\nLet's connect soon!\nBest regards,\nSalim Brahim.`;
-      
+
       const newMessage = {
         id: Math.random().toString(36).substr(2, 9),
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -165,7 +176,7 @@ export default function App() {
         message: contactForm.message,
         reply: generatedReply
       };
-      
+
       setSentMessages(prev => [newMessage, ...prev]);
       setIsSending(false);
       setContactForm({ name: "", email: "", subject: "", message: "" });
@@ -179,7 +190,7 @@ export default function App() {
   // Run DevOps Pipeline Simulator
   const triggerPipeline = () => {
     if (pipelineState.isRunning) return;
-    
+
     const steps = [
       {
         title: "Initializing Workspace & Self-Hosted Windows Runner Connection",
@@ -354,7 +365,7 @@ export default function App() {
 
   return (
     <div className={`min-h-screen font-sans transition-colors duration-300 ${darkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
-      
+
       {/* Background Gradients */}
       <div className="absolute top-0 left-0 right-0 h-[600px] pointer-events-none overflow-hidden z-0">
         <div className={`absolute -top-40 left-1/4 w-[500px] h-[500px] rounded-full blur-[140px] opacity-45 mix-blend-screen transition-colors duration-500 ${darkMode ? 'bg-indigo-900/40' : 'bg-indigo-300/30'}`}></div>
@@ -366,7 +377,7 @@ export default function App() {
       <nav className={`sticky top-0 z-50 backdrop-blur-md transition-all duration-300 border-b ${darkMode ? 'bg-slate-950/80 border-slate-900' : 'bg-white/85 border-slate-200'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            
+
             {/* Logo Brand */}
             <a href="#home" className="flex items-center space-x-3 group" onClick={() => setShowFullBlog(false)}>
               <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-teal-400 p-[1.5px] shadow-md shadow-indigo-500/10 transition-transform duration-300 group-hover:scale-105">
@@ -501,10 +512,10 @@ export default function App() {
       <section id="home" className="relative pt-10 pb-20 md:py-28 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            
+
             {/* Left text column */}
             <div className="lg:col-span-7 space-y-6">
-              
+
               {/* Availability Badge */}
               <div className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium border border-teal-500/20 bg-teal-500/5 text-teal-400">
                 <span className="relative flex h-2 w-2">
@@ -556,7 +567,7 @@ export default function App() {
                   <span>Explore Portfolio</span>
                   <ArrowRight size={18} className="ml-2" />
                 </a>
-                
+
                 <a
                   href="#pipeline"
                   onClick={() => setShowFullBlog(false)}
@@ -565,7 +576,7 @@ export default function App() {
                   <Terminal size={18} className="mr-2" />
                   <span>Run Live CI/CD Demo</span>
                 </a>
-                
+
                 <button
                   onClick={handlePrintCV}
                   className={`inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-xl border transition-all hover:-translate-y-0.5 ${darkMode ? 'border-slate-800 bg-slate-900/40 text-slate-300 hover:text-white' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}
@@ -601,7 +612,7 @@ export default function App() {
             {/* Right Interactive Tech Card Column */}
             <div className="lg:col-span-5 relative mt-6 lg:mt-0">
               <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/10 to-teal-500/10 rounded-3xl blur-2xl pointer-events-none"></div>
-              
+
               {/* Immersive Mock IDE Card */}
               <div className={`relative border rounded-2xl shadow-2xl overflow-hidden transition-colors ${darkMode ? 'bg-slate-900/90 border-slate-800' : 'bg-slate-950 text-slate-200 border-slate-900'}`}>
                 {/* OS/IDE Header tabs */}
@@ -625,7 +636,7 @@ export default function App() {
                     <br />
                     <span className="text-purple-400">using</span> SalimBrahim.Core.Expertise;
                   </div>
-                  
+
                   <div>
                     <span className="text-purple-400">namespace</span> <span className="text-teal-400">SalimPortfolio</span>
                     {" {"}
@@ -718,7 +729,7 @@ export default function App() {
 
       {/* Main Section Content Container */}
       <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-24 sm:space-y-32 pb-32">
-        
+
         {/* About & Personal Info Section */}
         <section id="about" className="pt-10 scroll-mt-20">
           <div className="text-center max-w-2xl mx-auto space-y-3 mb-12">
@@ -732,14 +743,14 @@ export default function App() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            
+
             {/* Bio Card */}
             <div className={`lg:col-span-5 p-6 rounded-2xl border transition-all ${darkMode ? 'bg-slate-900/50 border-slate-800/80' : 'bg-white border-slate-200/80 shadow-md'} space-y-5`}>
               <h3 className="text-xl font-bold flex items-center space-x-2">
                 <Sparkles size={18} className="text-indigo-400" />
                 <span>Who is Salim Brahim?</span>
               </h3>
-              
+
               <p className={`text-sm ${darkMode ? 'text-slate-300' : 'text-slate-700'} leading-relaxed`}>
                 I am a passionate software engineer, currently based in Tunis, Tunisia. Over the course of my career, I've developed deep technical specialization in <strong>C# .NET</strong> and <strong>Java Enterprise</strong> frameworks, bridging them with modern single-page-application (SPA) client layers like <strong>Angular</strong>, <strong>AngularJS</strong>, and <strong>React</strong>.
               </p>
@@ -790,7 +801,7 @@ export default function App() {
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                
+
                 {/* Skill blocks */}
                 <div className={`p-4 rounded-xl border transition-all ${darkMode ? 'bg-slate-900/35 border-slate-800/65' : 'bg-white border-slate-200/60 shadow-sm'} space-y-2`}>
                   <div className="flex items-center space-x-2 text-indigo-400 font-semibold text-sm">
@@ -882,20 +893,20 @@ export default function App() {
         {/* Interactive CI/CD Terminal Simulator Section */}
         <section id="pipeline" className="scroll-mt-20">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            
+
             {/* Explanatory text of DevOps abilities */}
             <div className="lg:col-span-5 space-y-5">
               <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-mono border border-indigo-500/30 bg-indigo-500/5 text-indigo-400">
                 <Terminal size={12} />
                 <span>CI/CD Automation Expertise</span>
               </div>
-              
+
               <h2 className="text-3xl font-extrabold tracking-tight">
                 Interactive <span className="text-indigo-500">DevOps pipeline</span> Simulator
               </h2>
-              
+
               <div className="h-1.5 w-12 bg-indigo-600 rounded-full"></div>
-              
+
               <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'} leading-relaxed`}>
                 As a developer, I doesn't just write code—he automates compile sequences, unit tests, code quality scans (SonarQube), and secure IIS deployment procedures.
               </p>
@@ -939,7 +950,7 @@ export default function App() {
                   <Play size={16} className="mr-2" />
                   <span>Trigger Deployment Pipeline</span>
                 </button>
-                
+
                 {pipelineState.status !== 'idle' && (
                   <button
                     onClick={resetPipeline}
@@ -955,7 +966,7 @@ export default function App() {
             {/* Interactive CLI Terminal Window */}
             <div className="lg:col-span-7">
               <div className="border border-slate-900 bg-slate-950 rounded-2xl shadow-2xl overflow-hidden">
-                
+
                 {/* Terminal Header */}
                 <div className="flex items-center justify-between px-4 py-3 bg-slate-900/90 border-b border-slate-950">
                   <div className="flex items-center space-x-2">
@@ -977,7 +988,7 @@ export default function App() {
 
                 {/* Terminal Body */}
                 <div className="p-4 sm:p-5 font-mono text-xs text-left h-80 sm:h-96 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-slate-800">
-                  
+
                   {pipelineState.logs.length === 0 ? (
                     <div className="text-slate-500 flex flex-col items-center justify-center h-full text-center space-y-3">
                       <Terminal size={32} className="text-slate-700 animate-pulse" />
@@ -995,7 +1006,7 @@ export default function App() {
                       else if (log.includes("----------------") || log.includes("=========")) color = "text-slate-600";
                       else if (log.includes("▶") || log.includes("➜")) color = "text-indigo-300 font-bold";
                       else if (log.includes("🎉") || log.includes("🚀")) color = "text-teal-400 font-extrabold";
-                      
+
                       return (
                         <div key={index} className={`${color} whitespace-pre-wrap leading-relaxed break-all`}>
                           {log}
@@ -1025,7 +1036,7 @@ export default function App() {
         {/* Project Portfolio Section */}
         <section id="projects" className="scroll-mt-20">
           <div className="space-y-6">
-            
+
             {/* Section Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
               <div className="space-y-2 text-left">
@@ -1098,7 +1109,7 @@ export default function App() {
                     className={`group rounded-2xl border overflow-hidden flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${darkMode ? 'bg-slate-900/40 border-slate-800/80 hover:border-indigo-500/30' : 'bg-white border-slate-200/80 hover:border-indigo-500/40 shadow-sm'}`}
                   >
                     <div className="p-5 space-y-4">
-                      
+
                       {/* Company & Period Row */}
                       <div className="flex justify-between items-center text-[10px] font-mono text-slate-400">
                         <span className="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 font-semibold uppercase tracking-wider">{project.company}</span>
@@ -1129,7 +1140,7 @@ export default function App() {
                     </div>
 
                     <div className="px-5 pb-5 pt-2 space-y-4">
-                      
+
                       {/* Technologies tags */}
                       <div className="flex flex-wrap gap-1.5">
                         {project.technologies.slice(0, 5).map((tech, i) => (
@@ -1156,7 +1167,7 @@ export default function App() {
                           <Eye size={12} className="mr-1" />
                           <span>View Details</span>
                         </button>
-                        
+
                         {project.url && (
                           <a
                             href={project.url}
@@ -1182,10 +1193,10 @@ export default function App() {
         {/* Technical Skills and Languages Progress Section */}
         <section id="skills" className="scroll-mt-20">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-            
+
             {/* Left Column: Skill Matrix Progress */}
             <div className="lg:col-span-8 space-y-6">
-              
+
               <div className="space-y-2 text-left">
                 <h2 className="text-3xl font-extrabold tracking-tight">
                   Technical <span className="text-indigo-500">Skills Track</span>
@@ -1217,7 +1228,7 @@ export default function App() {
                       <span className="font-bold">{skill.name}</span>
                       <span className="text-indigo-400 font-mono font-semibold">{skill.level}%</span>
                     </div>
-                    
+
                     {/* Progress Bar Track */}
                     <div className={`h-2 w-full rounded-full overflow-hidden ${darkMode ? 'bg-slate-900' : 'bg-slate-200'}`}>
                       <div
@@ -1233,7 +1244,7 @@ export default function App() {
 
             {/* Right Column: Spoken Languages & Credentials */}
             <div className="lg:col-span-4 space-y-8">
-              
+
               {/* Spoken Languages card */}
               <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/40 border-slate-800' : 'bg-white border-slate-200 shadow-sm'} space-y-5`}>
                 <h3 className="text-lg font-bold flex items-center space-x-2 text-left">
@@ -1248,7 +1259,7 @@ export default function App() {
                         <span className="font-bold">{lang.name}</span>
                         <span className={`text-[10px] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{lang.level}</span>
                       </div>
-                      
+
                       <div className={`h-1.5 w-full rounded-full overflow-hidden ${darkMode ? 'bg-slate-950' : 'bg-slate-100'}`}>
                         <div
                           className="h-full bg-teal-400 rounded-full"
@@ -1304,12 +1315,12 @@ export default function App() {
             <PublishedBlogs darkMode={darkMode} />
           </div>
 
-          
+
         </section>
 
         {/* Contact section with digital twin assistant reply */}
         <section id="contact" className="scroll-mt-20">
-          
+
           <div className="text-center max-w-2xl mx-auto space-y-3 mb-12">
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
               Get In <span className="text-indigo-500">Touch</span>
@@ -1321,15 +1332,15 @@ export default function App() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            
+
             {/* Contact details and card info */}
             <div className="lg:col-span-5 space-y-6">
-              
+
               <div className={`p-6 rounded-2xl border text-left space-y-6 transition-all ${darkMode ? 'bg-slate-900/40 border-slate-800' : 'bg-white border-slate-200 shadow-md'}`}>
                 <h3 className="text-lg font-bold">Contact Directory</h3>
-                
+
                 <div className="space-y-4">
-                  
+
                   {/* Phone */}
                   <div className="flex items-start gap-3.5">
                     <div className="w-10 h-10 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center shrink-0">
@@ -1402,14 +1413,14 @@ export default function App() {
             {/* Simulated mailing form */}
             <div className="lg:col-span-7">
               <div className={`p-6 sm:p-8 rounded-2xl border text-left space-y-5 transition-all ${darkMode ? 'bg-slate-900/20 border-slate-800' : 'bg-white border-slate-200 shadow-md'}`}>
-                
+
                 <div className="space-y-1">
                   <h3 className="text-lg font-bold">Send Me a Message</h3>
                   <p className="text-xs text-slate-500">Your message will simulate an active secure SMTP deployment sequence below.</p>
                 </div>
 
                 <form onSubmit={handleContactSubmit} className="space-y-4">
-                  
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="text-xs text-slate-400 font-semibold">Your Name *</label>
@@ -1422,7 +1433,7 @@ export default function App() {
                         className={`w-full p-2.5 text-xs rounded-xl border focus:outline-none focus:ring-1 focus:ring-indigo-500 ${darkMode ? 'bg-slate-900 border-slate-800 text-slate-100 placeholder-slate-600' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'}`}
                       />
                     </div>
-                    
+
                     <div className="space-y-1.5">
                       <label className="text-xs text-slate-400 font-semibold">Your Email *</label>
                       <input
@@ -1490,7 +1501,7 @@ export default function App() {
                 {sentMessages.length > 0 && (
                   <div className="space-y-4 pt-5 border-t border-slate-800/60">
                     <h4 className="text-xs font-mono font-bold text-indigo-400 uppercase">Simulated Mail Server logs ({sentMessages.length})</h4>
-                    
+
                     <div className="space-y-4 max-h-60 overflow-y-auto">
                       {sentMessages.map((msg) => (
                         <div key={msg.id} className={`p-4 rounded-xl border space-y-3 text-xs ${darkMode ? 'bg-slate-950 border-slate-900' : 'bg-slate-50 border-slate-200'}`}>
@@ -1502,7 +1513,7 @@ export default function App() {
                             <span className="font-semibold text-slate-400">Subject:</span> {msg.subject}
                           </div>
                           <p className={`text-slate-400 pl-2 border-l border-slate-800 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>{msg.message}</p>
-                          
+
                           {/* Automated Digital Twin reply block */}
                           <div className="pt-3 border-t border-slate-900/60">
                             <div className="flex items-center space-x-1 text-teal-400 font-mono text-[10px] font-semibold mb-1">
@@ -1531,7 +1542,7 @@ export default function App() {
       {selectedProject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
           <div className={`w-full max-w-2xl rounded-2xl border shadow-2xl overflow-hidden transition-all text-left flex flex-col max-h-[90vh] ${darkMode ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-slate-200 text-slate-900'}`}>
-            
+
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800/60 shrink-0">
               <div>
@@ -1548,7 +1559,7 @@ export default function App() {
 
             {/* Modal Scrollable Body */}
             <div className="p-6 overflow-y-auto space-y-5 text-sm leading-relaxed">
-              
+
               <div>
                 <h4 className="text-xs font-mono font-semibold text-slate-500 uppercase tracking-wider mb-1">Role / Designation</h4>
                 <p className="font-bold text-indigo-400">{selectedProject.role}</p>
