@@ -1,0 +1,33 @@
+name: Supabase Heartbeat
+
+on:
+  schedule:
+    # every 5 minutes
+    - cron: "0 0 * * 0"
+
+  workflow_dispatch:
+
+jobs:
+  heartbeat:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Call Supabase API
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          echo "Pinging Supabase..."
+
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            "$SUPABASE_URL/rest/v1/blogs?select=*&order=start_time.asc" \
+            -H "apikey: $SUPABASE_ANON_KEY")
+
+          echo "Response code: $HTTP_CODE"
+
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "Heartbeat failed"
+            exit 1
+          fi
+
+          echo "Heartbeat successful"

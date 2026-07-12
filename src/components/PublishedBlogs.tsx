@@ -273,7 +273,7 @@ export default function PublishedBlogs({ darkMode }: { darkMode: boolean }) {
 
 
               <p className="text-xs text-slate-500 mt-2">
-                By {selectedBlog.author}
+                By Salim Brahim | {new Date(selectedBlog.updated_at).toLocaleDateString()}
               </p>
 
             </div>
