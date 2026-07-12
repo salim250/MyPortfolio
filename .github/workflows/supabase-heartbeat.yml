@@ -20,7 +20,7 @@ jobs:
           echo "Pinging Supabase..."
 
           HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-            "$SUPABASE_URL/rest/v1/blogs?select=*&order=start_time.asc" \
+            "$SUPABASE_URL/rest/v1/blogs?select=*" \
             -H "apikey: $SUPABASE_ANON_KEY")
 
           echo "Response code: $HTTP_CODE"
